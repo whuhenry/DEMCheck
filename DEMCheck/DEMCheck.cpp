@@ -6,7 +6,7 @@
 
 #define byte unsigned char
 
-char* inputFilePath = "F:\\数据\\srtm_59_07.tif";
+char* inputFilePath = "F:\\数据\\DEM8K\\60fen_30BYTE_E25E50-N6S34.tif";
 double minx, miny, maxx, maxy, dx, dy;
 int xSize, ySize;
 
@@ -122,19 +122,25 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	FILE* fp;
 	fopen_s(&fp, "out.txt", "w");
-	for (int x = 0; x < xSize; x++)
+	srand((unsigned int)clock());
+
+	for (int x = 0; x < xSize - 1; x++)
 	{
-		for (int y = 0; y < ySize; y++)
+		for (int y = 0; y < ySize - 1; y++)
 		{
+			double u = (double)rand() / RAND_MAX;
+			double v = (double)rand() / RAND_MAX;
+			double srcHeight = (1 - u) * (1 - v) * pBuf[x + y * xSize] + (1 - u) * v * pBuf[x + (y + 1) * xSize]
+				+ (1 - v) * u * pBuf[x + 1 + y * xSize] + u * v * pBuf[x + 1 + (y + 1) * xSize];
 			double geox = geoTrans[0] + x * geoTrans[1];
 			double geoy = geoTrans[3] + y * geoTrans[5];
-			short srtmDem = GetSRTMDEMValue(geox + dx / 2, geoy + dy / 2);
+			short srtmDem = GetSRTMDEMValue(geox + u * dx, geoy + v * dy);
 			if (ERR_DEM_VALUE == srtmDem)
 			{
 				printf("获取DEM高程值出现错误\n");
 				continue;
 			}
-			int delta = pBuf[x + y * xSize] - GetSRTMDEMValue(geox, geoy);
+			int delta = srcHeight * 30 - GetSRTMDEMValue(geox, geoy);
 			fprintf_s(fp, "%d\n", delta);
 		}
 	}
